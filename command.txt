@@ -1,0 +1,2 @@
+{"msgid":3, "id":1, "password":"123456"}
+{"msgid":6, "id":1, "friendid":2}
