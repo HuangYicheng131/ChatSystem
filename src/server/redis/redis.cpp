@@ -68,7 +68,7 @@ bool Redis::subscribe(int channel)
         return false;
     }
 
-    // redisBufferWrite可以循环发送缓冲区，知道缓冲区数据发送完毕
+    // redisBufferWrite可以循环发送缓冲区，直到缓冲区数据发送完毕
     int done = 0;
     while(!done){
         if(REDIS_ERR == redisBufferWrite(this->_subscribe_context, &done)){
@@ -89,7 +89,7 @@ bool Redis::unsubscribe(int channel)
         return false;
     }
 
-    // redisBufferWrite可以循环发送缓冲区，知道缓冲区数据发送完毕
+    // redisBufferWrite可以循环发送缓冲区，直到缓冲区数据发送完毕
     int done = 0;
     while(!done){
         if(REDIS_ERR == redisBufferWrite(this->_subscribe_context, &done)){
