@@ -197,6 +197,11 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
 // 处理注销业务
 void ChatService::loginout(const TcpConnectionPtr &conn, json &js, Timestamp time){
     int userid = js["id"].get<int>();
+
+    User user;
+    user.setId(userid);
+    user.setState("offline");
+    _userModel.updateState(user);
     
     {
         lock_guard<mutex> lock(_connMutex);
@@ -208,17 +213,21 @@ void ChatService::loginout(const TcpConnectionPtr &conn, json &js, Timestamp tim
 
     // redis取消订阅
     _redis.unsubscribe(userid);
-
-    User user;
-    user.setId(userid);
-    user.setState("offline");
-    _userModel.updateState(user);
 }
 
 // 处理客户端异常退出
 void ChatService::clientCloseException(const TcpConnectionPtr &conn)
 {
     User user;
+
+    // 用户更新的状态信息
+    if(user.getId() != -1){
+        user.setState("offline");
+        _userModel.updateState(user);
+    }
+
+    // redis取消订阅
+    _redis.unsubscribe(user.getId());
 
     {
         lock_guard<mutex> lock(_connMutex);
@@ -233,16 +242,7 @@ void ChatService::clientCloseException(const TcpConnectionPtr &conn)
                 break;
             }
         }
-    }
-
-    // redis取消订阅
-    _redis.unsubscribe(user.getId());
-
-    // 用户更新的状态信息
-    if(user.getId() != -1){
-        user.setState("offline");
-        _userModel.updateState(user);
-    }
+    }    
 }
 
  // 一对一聊天业务

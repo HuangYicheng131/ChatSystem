@@ -28,19 +28,17 @@ vector<User> g_currUserFriendList;
 // 记录当前登录用户群组列表信息
 vector<Group> g_currUserGroupList;
 
-// 控制主菜单页面
-bool isMainMenuRunning = false;
-// 用于读写线程之间的通信
-sem_t rwsem;
 // 记录登陆状态
 atomic_bool g_isLoginSuccess(false);
+// 控制主菜单页面
+bool isMainMenuRunning = false;
 
-// 显示当前登录成功用户的基本信息
-void showCurrentUserData();
+// 用于读写线程之间的通信
+sem_t rwsem;
 // 接收线程
 void readTaskHandler(int clientfd);
-// 获取事件（聊天信息需要添加时间信息）
-string getCurrentTime();
+// 显示当前登录成功用户的基本信息
+void showCurrentUserData();
 // 主聊天页面程序
 void mainMenu(int clientfd);
 
@@ -174,7 +172,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-// 登录响应路逻辑
+// 登录响应逻辑
 void doLoginResponse(json &responsejs)
 {
     if (0 != responsejs["errno"].get<int>())
@@ -257,6 +255,7 @@ void doLoginResponse(json &responsejs)
     }
 }
 
+// 注册响应逻辑
 void doRegResponse(json responsejs)
 {
     if (0 != responsejs["errno"].get<int>())

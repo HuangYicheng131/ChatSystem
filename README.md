@@ -181,3 +181,51 @@ vector<GroupUser> users;
 | groupid   | int                      | NO   | PRI | NULL    |       |
 | userid    | int                      | NO   | PRI | NULL    |       |
 | grouprole | enum('creator','normal') | YES  |     | normal  |       |
+
+## nginx
+
+## redis
+
+# 客户端
+
+利用socket编程与服务器端建立连接
+
+主线程用于向服务器发送数据，创建子线程用于接收和处理服务器发送的数据，并通过信号量控制主子线程间的通信
+
+```
+// 初始化信号量
+sem_init(&rwsem, 0, 0);
+// 连接服务器成功，启动子线程，接收
+std::thread readTask(readTaskHandler, clientfd);
+readTask.detach();
+```
+
+用户根据菜单输入要执行的业务，并跳转到相应代码执行。向服务器发送数据后，主线程阻塞，等待子线程接收并处理服务器响应数据，再通知主线程继续执行。
+
+## 登录后业务
+
+`g_isLoginSuccess` 记录用户登录状态，当用户成功登录后，循环显示主菜单，根据输入的命令调用响应的处理函数
+
+```
+// 系统支持的客户端命令列表
+unordered_map<string, string> commandMap = {
+    {"help", "显示所有支持的命令, 格式help"},
+    {"chat", "一对一聊天, 格式chat:friendid:message"},
+    {"addfriend", "添加好友, 格式addfriend:friendid"},
+    {"creategroup", "创建群组, 格式creategroup:groupname:groupdesc"},
+    {"addgroup", "加入群组, 格式addgroup:groupid"},
+    {"groupchat", "群聊, 格式groupchat:groupid:message"},
+    {"loginout", "注销, 格式loginout"}};
+
+// 系统支持的客户端命令处理
+unordered_map<string, function<void(int, string)>> commandHandlerMap = {
+    {"help", help},
+    {"chat", chat},
+    {"addfriend", addfriend},
+    {"creategroup", creategroup},
+    {"addgroup", addgroup},
+    {"groupchat", groupchat},
+    {"loginout", loginout}};
+```
+
+若用户注销登录，改变 `isMainMenuRunning`，退出主菜单循环，返回登录注册页面
