@@ -37,6 +37,7 @@ bool Redis::connect()
         return false;
     }
 
+    // 在单独的线程中，监听通道上的事件，有消息给业务层进行上报
     thread t([&]() { 
         observe_channel_message(); 
     });

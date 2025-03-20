@@ -220,15 +220,6 @@ void ChatService::clientCloseException(const TcpConnectionPtr &conn)
 {
     User user;
 
-    // 用户更新的状态信息
-    if(user.getId() != -1){
-        user.setState("offline");
-        _userModel.updateState(user);
-    }
-
-    // redis取消订阅
-    _redis.unsubscribe(user.getId());
-
     {
         lock_guard<mutex> lock(_connMutex);
         
@@ -242,7 +233,16 @@ void ChatService::clientCloseException(const TcpConnectionPtr &conn)
                 break;
             }
         }
-    }    
+    }
+
+    // redis取消订阅
+    _redis.unsubscribe(user.getId());
+
+    // 用户更新的状态信息
+    if(user.getId() != -1){
+        user.setState("offline");
+        _userModel.updateState(user);
+    }
 }
 
  // 一对一聊天业务
@@ -339,6 +339,6 @@ void ChatService::handleRedisSubscribeMMessage(int userid, string msg){
         return;
     }
 
-    // 离线，存储消息
+    // 在上报过程中，用户下线了，存储消息
     _offlineMsgModel.insert(userid, msg);
 }

@@ -19,7 +19,7 @@
 
 使用 muduo 开发网络模块。Muduo 网络库底层实质上为 Linux 的 epoll + pthread 线程池，且依赖 boost 库，**优点是能够将网络 I/O 的代码和业务代码分开**。
 
-muduo的网络设计核心为一个线程一个事件循环，有一个 `main Reactor` 负载 accept 连接，然后把连接分发到某个 `sub Reactor`，该连接的所用操作都在该 `sub Reactor` 所处的线程中完成。多个连接可能被分派到多个线程中，以充分利用 CPU，reactor poll 的大小是固定的，根据CPU的数目确定。
+muduo的网络设计核心为**一个线程一个事件循环**，有一个 `main Reactor` 负载 accept 连接，然后把连接分发到某个 `sub Reactor`，该连接的所用操作都在该 `sub Reactor` 所处的线程中完成。多个连接可能被分派到多个线程中，以充分利用 CPU，reactor poll 的大小是固定的，根据CPU的数目确定。
 
 muduo 库服务器编程流程：
 1. 组合 TcpServer 对象
@@ -184,7 +184,49 @@ vector<GroupUser> users;
 
 ## nginx
 
+负载均衡器
+1. 把 client 请求按照负载算法分发到具体业务服务器 ChatServer 上
+2. 能够和 ChatServer 保持心跳机制，监测 ChatServer 故障
+3. 能够发现新添加的 ChatServer 设备，方便扩展服务器数量
+
+客户端的请求和服务器的响应都需要经过负载均衡器
+
+配置 TCP 负载均衡，编译时需要加入 `--with-stream` 参数激活
+```
+./configure --with-stream 
+make && make install
+```
+
+配置文件 `conf/nginx.conf`
+```
+stream {
+    upstream MyServer {
+        server 127.0.0.1:6000 weight=1 max_fails=3 fail_timeout=30s;
+        server 127.0.0.1:6002 weight=1 max_fails=3 fail_timeout=30s;
+    
+        server {
+            proxy_connect_timeout 1s;
+            listen 8000; # nginx 监听的端口号
+            proxy_pass MyServer;
+            tcp_nodelay on;
+        }
+    }
+}
+```
+
+启动 nginx，重新加载配置
+```
+./nginx # 启动 nginx
+./nginx -s reload # 重载配置文件
+```
+
 ## redis
+
+基于发布/订阅的消息队列，解决跨服务器通信问题，降低服务器集群间的耦合程度
+
+redis 支持多种不同的客户端编程语言，C++对应的时hiredis，从 github 上下载客户端，进行源码编译安装
+
+具体功能在 `Redis` 类中实现，连接、发布、订阅、取消订阅、设置回调函数。在独立的子线程中接收订阅通道的消息，以免阻塞主线程。
 
 # 客户端
 
